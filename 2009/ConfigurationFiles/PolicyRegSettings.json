@@ -92,6 +92,13 @@
     },
     {
         "RegItemPath": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "RegItemValueName": "DisableAcrylicBackgroundOnLogon",
+        "RegItemValueType": "DWord",
+        "RegItemValue": "1",
+        "VDIState": "Enabled"
+    },
+    {
+        "RegItemPath": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
         "RegItemValueName": "DisableLockScreenAppNotifications",
         "RegItemValueType": "DWord",
         "RegItemValue": "1",
@@ -123,6 +130,13 @@
         "RegItemValueName": "Disabled",
         "RegItemValueType": "DWord",
         "RegItemValue": "0",
+        "VDIState": "Enabled"
+    },
+    {
+        "RegItemPath": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\NetworkConnectivityStatusIndicator",
+        "RegItemValueName": "DisablePassivePolling",
+        "RegItemValueType": "DWord",
+        "RegItemValue": "1",
         "VDIState": "Enabled"
     },
     {
@@ -345,6 +359,20 @@
     {
         "RegItemPath": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
         "RegItemValueName": "DisableAcrylicBackgroundOnLogon",
+        "RegItemValueType": "DWord",
+        "RegItemValue": "1",
+        "VDIState": "Enabled"
+    },
+    {
+        "RegItemPath": "HKLM:\\SOFTWARE\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "RegItemValueName": "DisableLockScreenAppNotifications",
+        "RegItemValueType": "DWord",
+        "RegItemValue": "1",
+        "VDIState": "Enabled"
+    },
+    {
+        "RegItemPath": "HKLM:\\SOFTWARE\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "RegItemValueName": "DontEnumerateConnectedUsers",
         "RegItemValueType": "DWord",
         "RegItemValue": "1",
         "VDIState": "Enabled"
