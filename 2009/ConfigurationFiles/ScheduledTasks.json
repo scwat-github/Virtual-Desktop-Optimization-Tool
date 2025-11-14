@@ -35,11 +35,6 @@
     "Description": "This task shows various Map related toasts"
   },
   {
-    "ScheduledTask": "Microsoft Compatibility Appraiser",
-    "VDIState": "Disabled",
-    "Description": "Collects program telemetry information if opted-in to the Microsoft Customer Experience Improvement Program."
-  },
-  {
     "ScheduledTask": "Microsoft Compatibility Appraiser Exp",
     "VDIState": "Disabled",
     "Description": "Collects program telemetry information if opted-in to the Microsoft Customer Experience Improvement Program."
