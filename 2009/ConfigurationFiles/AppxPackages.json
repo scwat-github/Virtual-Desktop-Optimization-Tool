@@ -1,7 +1,7 @@
 [
    {
     "AppxPackage": "NotepadPlusPlus",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "",
     "Description": ""
   },
@@ -13,19 +13,19 @@
   },
   {
     "AppxPackage": "Clipchamp.Clipchamp",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/9p1j8s7ccwwt",
     "Description": "Create videos with a few clicks"
   },
   {
     "AppxPackage": "Microsoft.Copilot",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/9nht9rb2f4hd",
     "Description": "Microsoft AI app"
   },
   {
     "AppxPackage": "Microsoft.549981C3F5F10",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/cortana/9NFFX4SZZ23L",
     "Description": "Cortana (could not update)"
   },
@@ -49,7 +49,7 @@
   },
   {
     "AppxPackage": "Microsoft.Edge.GameAssist ",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "",
     "Description": ""
   },
@@ -79,7 +79,7 @@
   },
   {
     "AppxPackage": "Microsoft.Office.OneNote",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://www.microsoft.com/en-us/p/onenote-for-windows-10/9wzdncrfhvjl",
     "Description": "Office UWP OneNote app"
   },
@@ -91,7 +91,7 @@
   },
   {
     "AppxPackage": "Microsoft.MicrosoftStickyNotes",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://www.microsoft.com/en-us/p/microsoft-sticky-notes/9nblggh4qghw",
     "Description": "Note-taking app"
   },
@@ -109,7 +109,7 @@
   },
   {
     "AppxPackage": "Microsoft.Paint",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/9PCFS5B6T72H",
     "Description": "Classic Paint app"
   },
@@ -121,7 +121,7 @@
   },
   {
     "AppxPackage": "Microsoft.PowerAutomateDesktop",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://flow.microsoft.com/en-us/desktop/",
     "Description": "Power Automate Desktop app. Record desktop and web actions in a single flow"
   },
@@ -139,31 +139,31 @@
   },
   {
     "AppxPackage": "Microsoft.StorePurchaseApp",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "",
     "Description": "Store purchase app helper"
   },
   {
     "AppxPackage": "Microsoft.Todos",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://www.microsoft.com/en-us/p/microsoft-to-do-lists-tasks-reminders/9nblggh5r558",
     "Description": "Microsoft To Do makes it easy to plan your day and manage your life"
   },
   {
     "AppxPackage": "Microsoft.USNationalParks",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "",
     "Description": ""
   },
   {
     "AppxPackage": "Microsoft.WinDbg.Fast",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/9PGJGD53TN86?hl=en-us&gl=US",
     "Description": "Microsoft WinDbg"
   },
   {
     "AppxPackage": "Microsoft.Windows.DevHome",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://learn.microsoft.com/en-us/windows/dev-home/",
     "Description": "A control center providing the ability to monitor projects in your dashboard using customizable widgets and more"
   },
@@ -181,7 +181,7 @@
   },
   {
     "AppxPackage": "Microsoft.WindowsCalculator",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://www.microsoft.com/en-us/p/windows-calculator/9wzdncrfhvn5",
     "Description": "Microsoft Calculator app"
   },
@@ -211,7 +211,7 @@
   },
   {
     "AppxPackage": "Microsoft.WindowsNotepad",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://www.microsoft.com/en-us/p/windows-notepad/9msmlrh6lzf3",
     "Description": "Fast, simple text editor for plain text documents and source code files."
   },
@@ -289,13 +289,13 @@
   },
   {
     "AppxPackage": "MicrosoftCorporationII.QuickAssist",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/9P7BP5VNWKX5?hl=en-us&gl=US",
     "Description": "Microsoft remote help app"
   },
   {
     "AppxPackage": "MicrosoftWindows.Client.WebExperience",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "",
     "Description": "Windows 11 Internet information widget"
   },
@@ -319,13 +319,13 @@
   },
   {
     "AppxPackage": "MicrosoftTeams",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/xp8bt8dw290mpq",
     "Description": "Microsoft communication platform"
   },
   {
     "AppxPackage": "MSTeams",
-    "VDIState": "Unchanged",
+    "VDIState": "Disabled",
     "URL": "https://apps.microsoft.com/detail/xp8bt8dw290mpq",
     "Description": "Microsoft communication platform"
   },
