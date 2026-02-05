@@ -211,7 +211,7 @@
   },
   {
     "AppxPackage": "Microsoft.WindowsNotepad",
-    "VDIState": "Disabled",
+    "VDIState": "Unchanged",
     "URL": "https://www.microsoft.com/en-us/p/windows-notepad/9msmlrh6lzf3",
     "Description": "Fast, simple text editor for plain text documents and source code files."
   },
