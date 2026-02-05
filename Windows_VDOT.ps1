@@ -28,10 +28,10 @@
 [Cmdletbinding(DefaultParameterSetName="Default")]
 Param (
     # Parameter help description
-    [ArgumentCompleter( { Get-ChildItem $PSScriptRoot -Directory | Where-Object { $_.Name -ne 'LGPO' } | Select-Object -ExpandProperty Name } )]
+    [ArgumentCompleter( { Get-ChildItem $PSScriptRoot -Directory | Select-Object -ExpandProperty Name } )]
     [System.String]$WindowsVersion = (Get-ItemProperty "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\").ReleaseId,
 
-    [ValidateSet('All','WindowsMediaPlayer','AppxPackages','ScheduledTasks','DefaultUserSettings','Autologgers','Services','NetworkOptimizations','LGPO','DiskCleanup')] 
+    [ValidateSet('All','WindowsMediaPlayer','AppxPackages','ScheduledTasks','DefaultUserSettings','LocalPolicy','Autologgers','Services','NetworkOptimizations','DiskCleanup')] 
     [String[]]
     $Optimizations,
 
@@ -51,22 +51,19 @@ Param (
 - TITLE:          Microsoft Windows Virtual Desktop Optimization Script
 - AUTHORED BY:    Robert M. Smith and Tim Muessig (Microsoft)
 - AUTHORED DATE:  11/19/2019
-- CONTRIBUTORS:   Travis Roberts (2020), Jason Parker (2020)
-- LAST UPDATED:   7/8/2022
-- PURPOSE:        To automatically apply settings referenced in the following white papers:
-                  https://docs.microsoft.com/en-us/windows-server/remote/remote-desktop-services/rds_vdi-recommendations-1909
+- CONTRIBUTORS:   Travis Roberts (2020), Jason Parker (2020), @brentil (2024)
+- LAST UPDATED:   6/14/2024
+- PURPOSE:        To automatically apply many optimization settings to and Windows device; VDI, AVD, standalone machine
                   
 - Important:      Every setting in this script and input files are possible optimizations only,
                   and NOT recommendations or requirements. Please evaluate every setting for applicability
                   to your specific environment. These scripts have been tested on Hyper-V VMs, as well as Azure VMs...
-                  including Windows 11.
+                  including Windows 11 23H2.
                   Please test thoroughly in your environment before implementation
 
 - DEPENDENCIES    1. On the target machine, run PowerShell elevated (as administrator)
                   2. Within PowerShell, set exectuion policy to enable the running of scripts.
                      Ex. Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
-                  3. LGPO.EXE (available at https://www.microsoft.com/en-us/download/details.aspx?id=55319)
-                  4. LGPO database files available in the respective folders (ex. \1909, or \2004)
                   5. This PowerShell script
                   6. The text input files containing all the apps, services, traces, etc. that you...
                      may be interested in disabling. Please review these input files to customize...
@@ -75,15 +72,12 @@ Param (
 - REFERENCES:
 https://social.technet.microsoft.com/wiki/contents/articles/7703.powershell-running-executables.aspx
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/remove-item?view=powershell-6
-https://blogs.technet.microsoft.com/secguide/2016/01/21/lgpo-exe-local-group-policy-object-utility-v1-0/
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-service?view=powershell-6
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/remove-item?view=powershell-6
 https://msdn.microsoft.com/en-us/library/cc422938.aspx
 #>
 
 <# Categories of cleanup items:
-This script is dependent on the following:
-LGPO Settings folder, applied with the LGPO.exe Microsoft app
 
 The UWP app input file contains the list of almost all the UWP application packages that can be removed with PowerShell interactively.  
 The Store and a few others, such as Wallet, were left off intentionally.  Though it is possible to remove the Store app, 
@@ -123,7 +117,7 @@ BEGIN
         New-ItemProperty -Path $KeyPath -Name $LastRun -Value $LastRunValue | Out-Null
     }
     
-    $EventSources = @('VDOT', 'WindowsMediaPlayer', 'AppxPackages', 'ScheduledTasks', 'DefaultUserSettings', 'Autologgers', 'Services', 'NetworkOptimizations', 'LGPO', 'AdvancedOptimizations', 'DiskCleanup')
+    $EventSources = @('VDOT', 'WindowsMediaPlayer', 'AppxPackages', 'ScheduledTasks', 'DefaultUserSettings', 'Autologgers', 'Services', 'LocalPolicy', 'NetworkOptimizations', 'AdvancedOptimizations', 'DiskCleanup')
     If (-not([System.Diagnostics.EventLog]::SourceExists("Virtual Desktop Optimization")))
     {
         # All VDOT main function Event ID's [1-9]
@@ -195,24 +189,45 @@ PROCESS {
         Write-EventLog -LogName 'Virtual Desktop Optimization' -Source 'VDOT' -EntryType Information -EventId 1 -Message "EULA Accepted by Parameter" 
     }
 
-    #region Disable, then remove, Windows Media Player including payload
-    If ($Optimizations -contains "WindowsMediaPlayer" -or $Optimizations -contains "All") {
+    #region Disable, then remove, "Legacy" Windows Media Player including payload (not the Win11 UWP Media Player)
+    If ($Optimizations -contains "WindowsMediaPlayer" -or $Optimizations -contains "All")
+    {
+        Write-EventLog -EventId 10 -Message "[VDI Optimize] Disable / Remove legacy Windows Media Player" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Information
+        Write-Host "[VDI Optimize] Disable / Remove legacy Windows Media Player"
         try
         {
-            Write-EventLog -EventId 10 -Message "[VDI Optimize] Disable / Remove Windows Media Player" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Information 
-            Write-Host "[VDI Optimize] Disable / Remove Windows Media Player" -ForegroundColor Cyan
             Disable-WindowsOptionalFeature -Online -FeatureName WindowsMediaPlayer -NoRestart | Out-Null
-            Get-WindowsPackage -Online -PackageName "*Windows-mediaplayer*" | ForEach-Object { 
-                Write-EventLog -EventId 10 -Message "Removing $($_.PackageName)" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Information 
-                Remove-WindowsPackage -PackageName $_.PackageName -Online -ErrorAction SilentlyContinue -NoRestart | Out-Null
+        }
+        catch
+        {
+            Write-EventLog -EventId 110 -Message "Failed to disable legacy Windows Media Player: $($_.Exception.Message)" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Warning
+        }
+
+        $mediaPackages = Get-WindowsPackage -Online -PackageName "*media*"
+        if ($mediaPackages)
+         {
+            foreach ($pkg in $mediaPackages)
+            {
+                $pkgName = $pkg.PackageName
+                Write-EventLog -EventId 10 -Message "Attempting to remove $pkgName" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Information
+                try
+                {
+                    Remove-WindowsPackage -PackageName $pkgName -Online -NoRestart -ErrorAction Stop | Out-Null
+                    Write-EventLog -EventId 10 -Message "Successfully removed $pkgName" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Information
+                }
+                catch
+                {
+                    Write-EventLog -EventId 110 -Message "Failed to remove $pkgName`: $($_.Exception.Message)" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Warning
+                }
             }
         }
-        catch 
-        { 
-            Write-EventLog -EventId 110 -Message "Disabling / Removing Windows Media Player - $($_.Exception.Message)" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Error 
+        else
+        {
+            Write-EventLog -EventId 10 -Message "No media packages found to remove" -LogName 'Virtual Desktop Optimization' -Source 'WindowsMediaPlayer' -EntryType Information
         }
     }
-    #endregion
+    #endregion Disable, then remove, legacy Windows Media Player
+
 
     #region Begin Clean APPX Packages
     If ($Optimizations -contains "AppxPackages" -or $Optimizations -contains "All")
@@ -560,17 +575,17 @@ PROCESS {
     #   * change the "Root Certificates Update" policy.
     #   * change the "Enable Windows NTP Client" setting.
     #   * set the "Select when Quality Updates are received" policy
-    If ($Optimizations -contains "LGPO" -or $Optimizations -contains "All")
+    If ($Optimizations -contains "LocalPolicy" -or $Optimizations -contains "All")
     {
         $LocalPolicyFilePath = ".\ConfigurationFiles\PolicyRegSettings.json"
         If (Test-Path $LocalPolicyFilePath)
         {
-            Write-EventLog -EventId 80 -Message "Local Group Policy Items" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Information
+            Write-EventLog -EventId 80 -Message "Local Policy Items" -LogName 'Virtual Desktop Optimization' -Source 'LocalPolicy' -EntryType Information
             Write-Host "[VDI Optimize] Local Group Policy Items" -ForegroundColor Cyan
             $PolicyRegSettings = Get-Content $LocalPolicyFilePath | ConvertFrom-Json
             If ($PolicyRegSettings.Count -gt 0)
             {
-                Write-EventLog -EventId 80 -Message "Processing PolicyRegSettings Settings ($($PolicyRegSettings.Count) Hives)" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Information
+                Write-EventLog -EventId 80 -Message "Processing PolicyRegSettings Settings ($($PolicyRegSettings.Count) Hives)" -LogName 'Virtual Desktop Optimization' -Source 'LocalPolicy' -EntryType Information
                 Write-Verbose "Processing PolicyRegSettings Settings ($($PolicyRegSettings.Count) Hives)"
                 Foreach ($Key in $PolicyRegSettings)
                 {
@@ -578,7 +593,7 @@ PROCESS {
                     {
                         If (Get-ItemProperty -Path $Key.RegItemPath -Name $Key.RegItemValueName -ErrorAction SilentlyContinue) 
                         { 
-                            Write-EventLog -EventId 80 -Message "Found key, $($Key.RegItemPath) Name $($Key.RegItemValueName) Value $($Key.RegItemValue)" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Information
+                            Write-EventLog -EventId 80 -Message "Found key, $($Key.RegItemPath) Name $($Key.RegItemValueName) Value $($Key.RegItemValue)" -LogName 'Virtual Desktop Optimization' -Source 'LocalPolicy' -EntryType Information
                             Write-Verbose "Found key, $($Key.RegItemPath) Name $($Key.RegItemValueName) Value $($Key.RegItemValue)"
                             Set-ItemProperty -Path $Key.RegItemPath -Name $Key.RegItemValueName -Value $Key.RegItemValue -Force 
                         }
@@ -586,13 +601,13 @@ PROCESS {
                         { 
                             If (Test-path $Key.RegItemPath)
                             {
-                                Write-EventLog -EventId 80 -Message "Path found, creating new property -Path $($Key.RegItemPath) -Name $($Key.RegItemValueName) -PropertyType $($Key.RegItemValueType) -Value $($Key.RegItemValue)" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Information
+                                Write-EventLog -EventId 80 -Message "Path found, creating new property -Path $($Key.RegItemPath) -Name $($Key.RegItemValueName) -PropertyType $($Key.RegItemValueType) -Value $($Key.RegItemValue)" -LogName 'Virtual Desktop Optimization' -Source 'LocalPolicy' -EntryType Information
                                 Write-Verbose "Path found, creating new property -Path $($Key.RegItemPath) Name $($Key.RegItemValueName) PropertyType $($Key.RegItemValueType) Value $($Key.RegItemValue)"
                                 New-ItemProperty -Path $Key.RegItemPath -Name $Key.RegItemValueName -PropertyType $Key.RegItemValueType -Value $Key.RegItemValue -Force | Out-Null 
                             }
                             Else
                             {
-                                Write-EventLog -EventId 80 -Message "Error: Creating Name $($Key.RegItemValueName), Value $($Key.RegItemValue) and Path $($Key.RegItemPath)" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Information
+                                Write-EventLog -EventId 80 -Message "Error: Creating Name $($Key.RegItemValueName), Value $($Key.RegItemValue) and Path $($Key.RegItemPath)" -LogName 'Virtual Desktop Optimization' -Source 'LocalPolicy' -EntryType Information
                                 Write-Verbose "Error: Creating Name $($Key.RegItemValueName), Value $($Key.RegItemValue) and Path $($Key.RegItemPath)"
                                 New-Item -Path $Key.RegItemPath -Force | New-ItemProperty -Name $Key.RegItemValueName -PropertyType $Key.RegItemValueType -Value $Key.RegItemValue -Force | Out-Null
                             }
@@ -603,26 +618,10 @@ PROCESS {
             }
             Else
             {
-                Write-EventLog -EventId 80 -Message "No LGPO Settings Found!" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Warning
-                Write-Warning "No LGPO Settings found"
+                Write-EventLog -EventId 80 -Message "No LocalPolicy Settings Found!" -LogName 'Virtual Desktop Optimization' -Source 'LocalPolicy' -EntryType Warning
+                Write-Warning "No LocalPolicy Settings found"
             }
         }
-        # Removing support for LGPO legacy tool
-        #Else 
-        #{
-        #    If (Test-Path (Join-Path $PSScriptRoot "LGPO\LGPO.exe"))
-        #    {
-        #        Write-EventLog -EventId 80 -Message "[VDI Optimize] Import Local Group Policy Items" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Information
-        #        Write-Host "[VDI Optimize] Import Local Group Policy Items" -ForegroundColor Cyan
-        #        Write-Verbose "Importing Local Group Policy Items"
-        #        Start-Process (Join-Path $PSScriptRoot "LGPO\LGPO.exe") -ArgumentList "/g .\LGPO" -Wait
-        #    }
-        #    Else
-        #    {
-        #        Write-EventLog -EventId 80 -Message "File not found $PSScriptRoot\LGPO\LGPO.exe" -LogName 'Virtual Desktop Optimization' -Source 'LGPO' -EntryType Warning
-        #        Write-Warning "File not found $PSScriptRoot\LGPO\LGPO.exe"
-        #    }
-        #}    
     }
     #endregion
     
@@ -721,42 +720,50 @@ PROCESS {
     # 5/18/20: Removing Disk Cleanup and moving some of those tasks to the following manual cleanup
         If ($Optimizations -contains "DiskCleanup" -or $Optimizations -contains "All")
         {
+            try
+            {
             Write-EventLog -EventId 90 -Message "Removing .tmp, .etl, .evtx, thumbcache*.db, *.log files not in use" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Removing .tmp, .etl, .evtx, thumbcache*.db, *.log files not in use"
+            Write-Verbose "Removing .tmp, .etl, .evtx, thumbcache*.db, *.log files not in use"
             Get-ChildItem -Path c:\ -Include *.tmp, *.dmp, *.etl, *.evtx, thumbcache*.db, *.log -File -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
 
             # Delete "RetailDemo" content (if it exits)
             Write-EventLog -EventId 90 -Message "Removing Retail Demo content (if it exists)" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Removing Retail Demo content (if it exists)"
+            Write-Verbose "Removing Retail Demo content (if it exists)"
             Get-ChildItem -Path $env:ProgramData\Microsoft\Windows\RetailDemo\* -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -ErrorAction SilentlyContinue
 
             # Delete not in-use anything in the C:\Windows\Temp folder
             Write-EventLog -EventId 90 -Message "Removing all files not in use in $env:windir\TEMP" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Removing all files not in use in $env:windir\TEMP"
+            Write-Verbose "Removing all files not in use in $env:windir\TEMP"
             Remove-Item -Path $env:windir\Temp\* -Recurse -Force -ErrorAction SilentlyContinue -Exclude packer*.ps1
 
             # Clear out Windows Error Reporting (WER) report archive folders
             Write-EventLog -EventId 90 -Message "Cleaning up WER report archive" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Cleaning up WER report archive"
+            Write-Verbose "Cleaning up WER report archive"
             Remove-Item -Path $env:ProgramData\Microsoft\Windows\WER\Temp\* -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -Path $env:ProgramData\Microsoft\Windows\WER\ReportArchive\* -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -Path $env:ProgramData\Microsoft\Windows\WER\ReportQueue\* -Recurse -Force -ErrorAction SilentlyContinue
 
             # Delete not in-use anything in your %temp% folder
             Write-EventLog -EventId 90 -Message "Removing files not in use in $env:temp directory" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Removing files not in use in $env:temp directory"
+            Write-Verbose "Removing files not in use in $env:temp directory"
             Remove-Item -Path $env:TEMP\* -Recurse -Force -ErrorAction SilentlyContinue -Exclude packer*.ps1
 
             # Clear out ALL visible Recycle Bins
             Write-EventLog -EventId 90 -Message "Clearing out ALL Recycle Bins" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Clearing out ALL Recycle Bins"
+            Write-Verbose "Clearing out ALL Recycle Bins"
             Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 
             # Clear out BranchCache cache
             Write-EventLog -EventId 90 -Message "Clearing BranchCache cache" -LogName 'Virtual Desktop Optimization' -Source 'DiskCleanup' -EntryType Information
-            Write-Host "Clearing BranchCache cache" 
+            Write-Verbose "Clearing BranchCache cache"
             Clear-BCCache -Force -ErrorAction SilentlyContinue
-        }    #endregion
+            }
+            catch
+            {
+                Write-Verbose "DiskCleanup encountered a non-critical error: $($_.Exception.Message)"
+            }
+        }
+        #endregion
 
     Set-Location $CurrentLocation
     $EndTime = Get-Date
